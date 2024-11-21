@@ -11,16 +11,30 @@ const HomeTable = () => {
   const [searchResults, setSearchResults] = useState({ clients: [], policies: [] });
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setUserId(user.id);
+    } else {
+      navigate('/login');
+    }
+  }, [navigate]);
+
   const handleSearch = async () => {
+    if (!userId) return;
+    
     if (searchTerm) {
       setIsLoading(true);
       try {
-        const results = await clientService.searchHome(searchTerm);
+        const results = await clientService.searchHome(userId, searchTerm);
         setSearchResults(results);
       } catch (error) {
         console.error('Error en la búsqueda:', error);
+        // You could add error state handling here if needed
       } finally {
         setIsLoading(false);
       }
@@ -30,13 +44,14 @@ const HomeTable = () => {
   };
 
   useEffect(() => {
-    if (searchTerm) {
+    if (searchTerm && userId) {
       const delayDebounceFn = setTimeout(() => {
         handleSearch();
       }, 300);
       return () => clearTimeout(delayDebounceFn);
     }
-  }, [searchTerm]);
+  }, [searchTerm, userId]);
+
 
 
   const handleViewClient = (clientId) => {

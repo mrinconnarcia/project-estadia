@@ -15,9 +15,11 @@ const policyService = {
     }
   },
 
-  getAllPolicies: async (page = 1) => {
+  getAllPolicies: async (userId, page = 1) => {
     try {
-      const response = await apiClient.get(`/polizas/?page=${page}`);
+      const response = await apiClient.get(
+        `/polizas/user/${userId}?page=${page}`
+      );
       return response.data;
     } catch (error) {
       console.error("Error fetching policies", error);
@@ -35,14 +37,23 @@ const policyService = {
     }
   },
 
-  searchPolicies: async (searchTerm) => {
+  searchPolicies: async (userId, searchTerm, page = 1, limit = 5) => {
     try {
-      const response = await search.get(
-        `/polizas?q=${encodeURIComponent(searchTerm)}`
-      );
-      return response.data;
+      const response = await search.get(`/users/${userId}/search/polizas`, {
+        params: {
+          q: searchTerm,
+          page,
+          limit,
+        },
+      });
+      return {
+        policies: response.data.policies || [],
+        totalPages: response.data.totalPages,
+        currentPage: response.data.currentPage,
+        totalItems: response.data.totalItems,
+      };
     } catch (error) {
-      console.error("Error searching policies", error);
+      console.error("Error in searchPolicies:", error);
       throw error;
     }
   },
@@ -59,27 +70,76 @@ const policyService = {
     }
   },
 
-  updatePolicy: async (clientId, policyId, policyData) => {
+  // updatePolicy: async (clientId, policyId, policyData) => {
+  //   try {
+  //     const response = await apiClient.put(
+  //       `/clientes/${clientId}/polizas/${policyId}`,
+  //       policyData
+  //     );
+  //     return response.data;
+  //   } catch (error) {
+  //     console.error("Error updating policy", error);
+  //     throw error;
+  //   }
+  // },
+
+  updatePolicy: async (policyId, policyData) => {
     try {
-      const response = await apiClient.put(`/clientes/${clientId}/polizas/${policyId}`, policyData);
-      return response.data;
+      const response = await apiClient.put(`/polizas/${policyId}`, policyData);
+      return response.data.poliza;
     } catch (error) {
-      console.error("Error updating policy", error);
-      throw error;
+      console.error("Full error details:", error);
+
+      if (error.response) {
+        console.error("Server error response:", error.response.data);
+
+        if (error.response.data.errors) {
+          throw new Error(
+            Object.values(error.response.data.errors).flat().join(", ")
+          );
+        }
+
+        // Si hay un mensaje de error del servidor
+        throw new Error(
+          error.response.data.message || "Error al actualizar la póliza"
+        );
+      } else if (error.request) {
+        throw new Error("No se recibió respuesta del servidor");
+      } else {
+        throw new Error("Error al configurar la solicitud");
+      }
     }
   },
 
   downloadPolicyExcel: async (userId) => {
     try {
-      const response = await apiClient.get(`/export-policies/${userId}`, {
-        responseType: "blob",
-        headers: {
-          'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      const response = await apiClient.get(
+        `/policies/download-excel/${userId}`,
+        {
+          responseType: "blob",
+          headers: {
+            Accept:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          },
         }
+      );
+
+      // Crear y descargar el archivo
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-      return response.data;
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `polizas_${new Date().toISOString()}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      return true;
     } catch (error) {
-      console.error("Error downloading Excel", error);
+      console.error("Error downloading policies Excel:", error);
       throw error;
     }
   },

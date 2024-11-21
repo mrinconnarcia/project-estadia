@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { Eye, EyeOff } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 
 const NewPasswordForm = () => {
   const [password, setPassword] = useState('');
@@ -10,6 +11,8 @@ const NewPasswordForm = () => {
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
   const { resetPassword } = useAuth();
+  const { token } = useParams(); // Obtén el token de la URL
+
 
   const validateForm = () => {
     const newErrors = {};
@@ -21,16 +24,28 @@ const NewPasswordForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    password_confirmation: '',
+  });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      try {
-        await resetPassword(password);
-        setSuccess(true);
-      } catch (error) {
-        console.error('Error al restablecer la contraseña:', error);
-        setErrors({ form: 'Error al restablecer la contraseña. Por favor, inténtalo de nuevo.' });
-      }
+    try {
+      await resetPassword(
+        formData.email,
+        formData.password,
+        formData.password_confirmation,
+        token
+      );
+      setSuccess(true);
+      setErrors({});
+    } catch (error) {
+      console.error('Error:', error);
+      setErrors({ 
+        form: error.message || 'Error al restablecer la contraseña.'
+      });
     }
   };
 

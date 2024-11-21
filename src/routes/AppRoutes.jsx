@@ -10,6 +10,7 @@ import PrivateRoute from './PrivateRoute';
 import PaymentsTable from '../components/PaymentsTable';
 import PolicyListByClient from '../components/PolicyListByClient';
 import PolicyDetailsPage from '../components/PolicyDetailsPage';
+import PaymentsDetailsView from '../components/PaymentDetailsView'
 
 const AppRoutes = () => {
   return (
@@ -22,6 +23,10 @@ const AppRoutes = () => {
       <Route path="/client/:clientId/policies" element={<PrivateRoute><PolicyListByClient /></PrivateRoute>} />
       <Route path="/policy/:policyId/payments" element={<PrivateRoute><PaymentsTable /></PrivateRoute>} />
       <Route path="/policy/:policyId" element={<PrivateRoute><PolicyDetailsPage /></PrivateRoute>} />
+      <Route 
+        path="/payments/:polizaId/details" 
+        element={<PrivateRoute><PaymentsDetailsView/></PrivateRoute>} 
+      />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

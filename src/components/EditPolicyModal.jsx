@@ -1,43 +1,48 @@
-import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
 
 const EditPolicyModal = ({ policy, onClose, onUpdate }) => {
-  const [editedPolicy, setEditedPolicy] = useState(policy);
+  const [editedPolicy, setEditedPolicy] = useState(policy || {});
+  const [errorMessage, setErrorMessage] = useState(null);
 
   useEffect(() => {
-    // Formatear las fechas al formato YYYY-MM-DD al inicializar el componente
-    setEditedPolicy(prevPolicy => ({
-      ...prevPolicy,
-      vigencia_de: formatDate(prevPolicy.vigencia_de),
-      vigencia_hasta: formatDate(prevPolicy.vigencia_hasta)
-    }));
+    if (policy) {
+      setEditedPolicy({
+        ...policy,
+        vigencia_de: formatDate(policy.vigencia_de),
+        vigencia_hasta: formatDate(policy.vigencia_hasta),
+      });
+    }
   }, [policy]);
 
+  // Formatear fechas a YYYY-MM-DD
   const formatDate = (dateString) => {
-    if (!dateString) return '';
+    if (!dateString) return ""; // Validar fechas nulas o vacías
     const date = new Date(dateString);
-    return date.toISOString().split('T')[0];
+    return isNaN(date) ? "" : date.toISOString().split("T")[0];
   };
 
   const handleChange = (e) => {
-    setEditedPolicy({ ...editedPolicy, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setEditedPolicy((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
   };
 
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-  //   // No need to convert dates back to ISO format, send as is
-  //   onUpdate(editedPolicy);
-  // };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Convertir las fechas de vuelta al formato original si es necesario
-    const updatedPolicy = {
-      ...editedPolicy,
-      vigencia_de: new Date(editedPolicy.vigencia_de).toISOString(),
-      vigencia_hasta: new Date(editedPolicy.vigencia_hasta).toISOString()
-    };
-    onUpdate(updatedPolicy);
+    setErrorMessage(null);
+
+    try {
+      const updatedPolicy = { ...editedPolicy };
+
+      await onUpdate(updatedPolicy);
+      onClose(); // Cierra el modal después de la actualización exitosa
+    } catch (error) {
+      console.error("Error al actualizar la póliza", error);
+      setErrorMessage(error.message || "Error al actualizar la póliza");
+    }
   };
 
   return (
@@ -45,72 +50,90 @@ const EditPolicyModal = ({ policy, onClose, onUpdate }) => {
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Editar Póliza</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
             <X size={24} />
           </button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="tipo_seguro" className="block text-gray-700 font-bold mb-2">
+            <label
+              htmlFor="tipo_seguro"
+              className="block text-gray-700 font-bold mb-2"
+            >
               Tipo de seguro
             </label>
             <input
               type="text"
               id="tipo_seguro"
               name="tipo_seguro"
-              value={editedPolicy.tipo_seguro}
+              value={editedPolicy.tipo_seguro || ""}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="prima_neta" className="block text-gray-700 font-bold mb-2">
+            <label
+              htmlFor="prima_neta"
+              className="block text-gray-700 font-bold mb-2"
+            >
               Prima neta
             </label>
             <input
               type="number"
               id="prima_neta"
               name="prima_neta"
-              value={editedPolicy.prima_neta}
+              value={editedPolicy.prima_neta || ""}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="asegurado" className="block text-gray-700 font-bold mb-2">
+            <label
+              htmlFor="asegurado"
+              className="block text-gray-700 font-bold mb-2"
+            >
               Asegurado
             </label>
             <input
               type="text"
               id="asegurado"
               name="asegurado"
-              value={editedPolicy.asegurado}
+              value={editedPolicy.asegurado || ""}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="vigencia_de" className="block text-gray-700 font-bold mb-2">
+            <label
+              htmlFor="vigencia_de"
+              className="block text-gray-700 font-bold mb-2"
+            >
               Vigencia desde
             </label>
             <input
               type="date"
               id="vigencia_de"
               name="vigencia_de"
-              value={editedPolicy.vigencia_de}
+              value={editedPolicy.vigencia_de || ""}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="vigencia_hasta" className="block text-gray-700 font-bold mb-2">
+            <label
+              htmlFor="vigencia_hasta"
+              className="block text-gray-700 font-bold mb-2"
+            >
               Vigencia hasta
             </label>
             <input
               type="date"
               id="vigencia_hasta"
               name="vigencia_hasta"
-              value={editedPolicy.vigencia_hasta}
+              value={editedPolicy.vigencia_hasta || ""}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
             />
@@ -131,6 +154,9 @@ const EditPolicyModal = ({ policy, onClose, onUpdate }) => {
             </button>
           </div>
         </form>
+        {errorMessage && (
+          <div className="text-red-500 mt-4">{errorMessage}</div>
+        )}
       </div>
     </div>
   );

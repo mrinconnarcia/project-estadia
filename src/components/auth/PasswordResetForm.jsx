@@ -5,7 +5,7 @@ const PasswordResetForm = () => {
   const [email, setEmail] = useState('');
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
-  const { resetPassword } = useAuth();
+  const { requestPasswordReset } = useAuth();
 
   const validateForm = () => {
     const newErrors = {};
@@ -17,14 +17,20 @@ const PasswordResetForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      try {
-        await resetPassword(email);
-        setSuccess(true);
-      } catch (error) {
-        console.error('Error al restablecer la contraseña:', error);
-        setErrors({ form: 'Error al enviar el correo de restablecimiento. Por favor, inténtalo de nuevo.' });
-      }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setErrors({ email: 'Email inválido' });
+      return;
+    }
+
+    try {
+      await requestPasswordReset(email);
+      setSuccess(true);
+      setErrors({});
+    } catch (error) {
+      console.error('Error:', error);
+      setErrors({ 
+        form: error.message || 'Error al enviar el correo de restablecimiento.'
+      });
     }
   };
 

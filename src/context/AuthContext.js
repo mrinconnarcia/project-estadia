@@ -48,17 +48,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const resetPassword = async (email) => {
+  const requestPasswordReset = async (email) => {
     try {
-      await authService.resetPassword(email);
+      const response = await authService.requestPasswordReset(email);
+      return response;
     } catch (error) {
-      console.error("Error during password reset:", error);
+      throw error;
+    }
+  };
+
+  const resetPassword = async (email, password, password_confirmation, token) => {
+    try {
+      const response = await authService.resetPassword(email, password, password_confirmation, token);
+      return response;
+    } catch (error) {
       throw error;
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, resetPassword, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, register, requestPasswordReset, resetPassword, loading }}>
       {children}
     </AuthContext.Provider>
   );

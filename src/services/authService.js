@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://zw30cmn4-3008.use2.devtunnels.ms/api/users/";
+const API_URL = "http://127.0.0.1:8000/api/";
 
 const authService = {
   login: async (email, password) => {
@@ -39,9 +39,29 @@ const authService = {
     return response.data;
   },
 
-  resetPassword: async (email) => {
-    const response = await axios.post(API_URL + "reset-password", { email });
-    return response.data;
+  // Solicitar restablecimiento de contraseña
+  requestPasswordReset: async (email) => {
+    try {
+      const response = await axios.post(API_URL + "forgot-password", { email });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Restablecer contraseña con token
+  resetPassword: async (email, password, password_confirmation, token) => {
+    try {
+      const response = await axios.post(API_URL + "reset-password", {
+        email,
+        password,
+        password_confirmation,
+        token
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
   },
 
   updateUser: async (userId, userData) => {
@@ -49,6 +69,7 @@ const authService = {
     if (!token) {
       throw new Error("User not authenticated");
     }
+
     const config = {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -56,31 +77,49 @@ const authService = {
       },
     };
 
-    const response = await axios.put(
-      `${API_URL}update/${userId}`,
-      userData,
-      config
-    );
-
-    if (response.data && response.data.user) {
-      const updatedUser = {
-        id: response.data.user.id,
-        name: response.data.user.name,
-        last_name: response.data.user.last_name,
-        email: response.data.user.email,
-        profile_picture: response.data.user.profile_picture,
-      };
-
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
+    try {
+      // Log the FormData contents
+      console.log("FormData contents:");
+      for (let pair of userData.entries()) {
+        console.log(pair[0] + ": " + pair[1]);
       }
-    } else {
-      console.error("No se encontraron datos de usuario en la respuesta.");
-    }
 
-    return response.data.user;
+      console.log("Sending request to:", `${API_URL}update/${userId}`);
+
+      const response = await axios.post(
+        `${API_URL}update/${userId}`,
+        userData,
+        config
+      );
+      console.log("Server response:", response.data);
+
+      if (response.data.user) {
+        const updatedUser = response.data.user;
+
+        // Update localStorage
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        return updatedUser;
+      } else {
+        throw new Error("Invalid server response format");
+      }
+    } catch (error) {
+      console.error("Error updating user:");
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+        console.error("Response headers:", error.response.headers);
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error("No response received:", error.request);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        console.error("Error message:", error.message);
+      }
+      throw error;
+    }
   },
   // Método auxiliar para obtener el token
   getToken: () => {

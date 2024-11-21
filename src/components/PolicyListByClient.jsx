@@ -11,7 +11,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
 const PolicyListByClient = ({ clientId, clientName, onBack }) => {
-  const [policies, setPolicies] = useState([]);
+  const [polizas, setPolicies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -31,21 +31,21 @@ const PolicyListByClient = ({ clientId, clientName, onBack }) => {
   const fetchPolicies = useCallback(async () => {
     setLoading(true);
     setError(null);
+    
     try {
-      const { polices, totalPages } = await clientService.getClientPolicies(
-        clientId,
-        currentPage,
-        limit
-      );
-      setPolicies(polices);
-      setTotalPages(totalPages);
+      // Usa la variable local `currentPage` dentro del bloque de `try`
+      const response = await clientService.getClientPolicies(clientId, currentPage, limit);
+      
+      setPolicies(response.polizas);
+      setTotalPages(response.totalPages);
+      setCurrentPage(response.currentPage);
     } catch (error) {
+      console.error("Error al obtener pólizas:", error);
       setError("Error al obtener pólizas. Por favor, intente de nuevo.");
-      // toast.error("Error al obtener pólizas. Por favor, intente de nuevo.");
     } finally {
       setLoading(false);
     }
-  }, [clientId, currentPage, limit]);
+  }, [clientId, limit]);
 
   useEffect(() => {
     fetchPolicies();
@@ -94,7 +94,7 @@ const PolicyListByClient = ({ clientId, clientName, onBack }) => {
 
   const handleSaveNewPolicy = async (formData) => {
     try {
-      await fetchPolicies(); // Refresh the policies list
+      await fetchPolicies(); // Refresh the polizas list
       toast.success("Póliza agregada correctamente");
       closeNewPolicyModal();
     } catch (error) {
@@ -177,8 +177,8 @@ const PolicyListByClient = ({ clientId, clientName, onBack }) => {
                 </tr>
               </thead>
               <tbody>
-                {policies.length > 0 ? (
-                  policies.map((policy) => (
+                {polizas.length > 0 ? (
+                  polizas.map((policy) => (
                     <tr
                       key={policy.id}
                       className="border-b hover:bg-gray-50 transition"

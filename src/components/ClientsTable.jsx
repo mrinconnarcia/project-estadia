@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Eye, Plus, Download, Search } from "lucide-react";
 import ClientModal from "./ClientModal";
 import clientService from "../services/clientService";
+import toast from "react-hot-toast";
 
 const ClientsTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,6 +62,7 @@ const ClientsTable = () => {
       setError(null);
       try {
         const { clients, totalPaginas } = await clientService.searchClients(
+          userId,
           searchTerm,
           page,
           limit
@@ -78,19 +80,13 @@ const ClientsTable = () => {
 
   const handleDownloadExcel = async () => {
     try {
-      if (!userId) return;
-      const blob = await clientService.downloadClientsExcel(userId);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = 'clientes.xlsx';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
+      await clientService.downloadClientsExcel(userId);
+      // Opcional: mostrar mensaje de éxito
+      toast.success('Excel descargado correctamente');
     } catch (error) {
-      console.error("Error downloading Excel file:", error);
-      // You can add error handling here, such as displaying an error message to the user
+      console.error("Error downloading Excel:", error);
+      // Mostrar mensaje de error
+      toast.error('Error al descargar el Excel');
     }
   };
 
